@@ -1,124 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Donut Invest— DonutSMP Market Terminal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreshFun Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
 </head>
 <body>
 
-<header class="topbar">
-  <div class="brand">
-    <span class="brand-mark">◍</span>
-    <span class="brand-name">DONUT<span class="brand-accent">INDEX</span></span>
-  </div>
-  <div class="topbar-sub">Unofficial DonutSMP market terminal</div>
+<header>
+  <div class="logo"><span class="fresh fun">FreshFun</span> Games</div>
+  <div class="tagline">Little games, made for fun.</div>
 </header>
 
-<div class="ticker-wrap" aria-hidden="true">
-  <div class="ticker-track" id="tickerTrack"></div>
-</div>
+<main class="games">
 
-<nav class="tabs" role="tablist">
-  <button class="tab-btn active" data-tab="auction" role="tab" aria-selected="true">
-    <span class="tab-glyph">▤</span> Auction
+  <!-- CHROMATIC PHYSICS -->
+  <button class="game-card" id="chromaCard" aria-label="Play Chromatic Physics">
+    <div class="thumb-wrap">
+      <canvas class="thumb" id="chromaThumb" width="320" height="200"></canvas>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Chromatic Physics</div>
+      <div class="card-desc">A ball, a circle, and total rainbow chaos.</div>
+      <span class="card-tag">Play</span>
+    </div>
   </button>
-  <button class="tab-btn" data-tab="investment" role="tab" aria-selected="false">
-    <span class="tab-glyph">◈</span> Investment
-  </button>
-  <button class="tab-btn" data-tab="player" role="tab" aria-selected="false">
-    <span class="tab-glyph">⛃</span> Player Stats
-  </button>
-</nav>
 
-<main>
-
-  <!-- AUCTION -->
-  <section id="auction" class="panel active">
-    <div class="panel-head">
-      <h1>Auction House</h1>
-      <p>Prices for the items players chase hardest — tracked as a simulated index, not a live feed.</p>
+  <!-- placeholders: copy this block when you add a new game -->
+  <div class="game-card locked">
+    <div class="thumb-wrap"><div class="locked-thumb">?</div></div>
+    <div class="card-body">
+      <div class="card-name">Mystery Game</div>
+      <div class="card-desc">Something new is cooking&hellip;</div>
+      <span class="card-tag">Coming soon</span>
     </div>
-    <div class="grid" id="itemGrid"></div>
+  </div>
 
-    <div class="detail" id="itemDetail" hidden>
-      <button class="close-detail" id="closeDetail">← Back to grid</button>
-      <div class="detail-head">
-        <div class="detail-icon" id="detailIcon"></div>
-        <div>
-          <h2 id="detailName">—</h2>
-          <div class="detail-price-row">
-            <span class="detail-price" id="detailPrice">—</span>
-            <span class="pill" id="detailChange">—</span>
-          </div>
-        </div>
-      </div>
-      <div class="range-toggle" role="tablist" aria-label="Chart range">
-        <button data-range="1D" class="range-btn active">1D</button>
-        <button data-range="1W" class="range-btn">1W</button>
-        <button data-range="1M" class="range-btn">1M</button>
-        <button data-range="1Y" class="range-btn">1Y</button>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="priceChart" height="260"></canvas>
-      </div>
-      <div class="stat-strip" id="detailStats"></div>
+  <div class="game-card locked">
+    <div class="thumb-wrap"><div class="locked-thumb">?</div></div>
+    <div class="card-body">
+      <div class="card-name">Mystery Game</div>
+      <div class="card-desc">Something new is cooking&hellip;</div>
+      <span class="card-tag">Coming soon</span>
     </div>
-  </section>
-
-  <!-- INVESTMENT -->
-  <section id="investment" class="panel">
-    <div class="panel-head">
-      <h1>Investment Desk</h1>
-      <p>A read on momentum, volatility and swing for every tracked item — so you know what's worth stockpiling before you sink hours farming it.</p>
-    </div>
-    <div class="invest-list" id="investList"></div>
-  </section>
-
-  <!-- PLAYER STATS -->
-  <section id="player" class="panel">
-    <div class="panel-head">
-      <h1>Player Stats</h1>
-      <p>Look up a player's live balance, kills, deaths and playtime straight from the DonutSMP API.</p>
-    </div>
-
-    <form class="lookup" id="lookupForm" autocomplete="off">
-      <input type="text" id="usernameInput" placeholder="Minecraft username, e.g. FreshFun" required />
-      <button type="submit" id="lookupBtn">Look up</button>
-    </form>
-
-    <button class="key-toggle" id="keyToggle" type="button">+ Set my DonutSMP API key</button>
-    <div class="key-box" id="keyBox" hidden>
-      <p>Get a key in-game with <code>/api</code> on DonutSMP, then paste it here. It's saved only in this browser and sent straight to <code>api.donutsmp.net</code> — never anywhere else.</p>
-      <input type="password" id="apiKeyInput" placeholder="Paste your API key" />
-      <button type="button" id="saveKeyBtn">Save key</button>
-      <span class="key-status" id="keyStatus"></span>
-    </div>
-
-    <div id="playerMsg" class="player-msg" hidden></div>
-
-    <div class="player-card" id="playerCard" hidden>
-      <div class="player-card-head">
-        <div class="player-avatar" id="playerAvatar"></div>
-        <div>
-          <h2 id="playerName">—</h2>
-          <span class="player-sub" id="playerSub"></span>
-        </div>
-      </div>
-      <div class="stat-grid" id="playerStatGrid"></div>
-    </div>
-  </section>
+  </div>
 
 </main>
 
-<footer>
-  <p>Glaze Index is a fan-made concept dashboard, not affiliated with DonutSMP. Auction and investment figures are simulated for demonstration — only Player Stats calls a live API.</p>
-</footer>
+<footer>FreshFun Games &middot; v1.0</footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- game loads right here, no leaving the page -->
+<div id="gameOverlay">
+  <iframe id="gameFrame" title="Chromatic Physics" allow="autoplay"></iframe>
+</div>
+<button id="exitGameBtn">&larr; FreshFun</button>
+
 <script src="script.js"></script>
 </body>
 </html>
