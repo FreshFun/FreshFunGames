@@ -7,7 +7,8 @@ const viewEls = {
   shade: document.getElementById('shadeView'),
   recall: document.getElementById('recallView'),
   flags: document.getElementById('flagsView'),
-  draw: document.getElementById('drawView')
+  draw: document.getElementById('drawView'),
+  poll: document.getElementById('pollView')
 };
 
 function showPanel(name) {
@@ -1629,3 +1630,166 @@ drawGradeBtn.addEventListener('click', gradeDrawing);
 drawClearBtn.addEventListener('click', () => { clearDrawCanvas(); drawResultCard.hidden = true; });
 drawUndoBtn.addEventListener('click', undoDrawStroke);
 drawNextBtn.addEventListener('click', () => { dPos++; loadDrawPrompt(); });
+
+// ═══════════════════ THE POLL ═══════════════════
+// 20 head-to-head "which is more popular" picks, ordered from lopsided
+// blowouts down to near-coinflips. Percentages are best-approximation
+// trivia-grade figures (favorite-color surveys, market share, fan base
+// size, etc.), not a live data feed — the site is static with no backend.
+
+const POLL_ITEMS = [
+  { question: "Which sport has more fans worldwide?",
+    a: { label: "Soccer", emoji: "⚽", pct: 90 }, b: { label: "American Football", emoji: "🏈", pct: 10 } },
+  { question: "Which is more common in people?",
+    a: { label: "Right-handed", emoji: "✋", pct: 90 }, b: { label: "Left-handed", emoji: "🤚", pct: 10 } },
+  { question: "Which search engine gets used more?",
+    a: { label: "Google", emoji: "🔎", pct: 90 }, b: { label: "Bing", emoji: "🌐", pct: 10 } },
+  { question: "Which holiday is celebrated by more people worldwide?",
+    a: { label: "Christmas", emoji: "🎄", pct: 85 }, b: { label: "Halloween", emoji: "🎃", pct: 15 } },
+  { question: "Which social app has more monthly users?",
+    a: { label: "Instagram", emoji: "📸", pct: 80 }, b: { label: "X (Twitter)", emoji: "🐦", pct: 20 } },
+  { question: "Which food is eaten in more countries?",
+    a: { label: "Pizza", emoji: "🍕", pct: 75 }, b: { label: "Sushi", emoji: "🍣", pct: 25 } },
+  { question: "Which Olympics draws more global viewers?",
+    a: { label: "Summer Olympics", emoji: "☀️", pct: 75 }, b: { label: "Winter Olympics", emoji: "❄️", pct: 25 } },
+  { question: "Which fast food chain has more locations worldwide?",
+    a: { label: "McDonald's", emoji: "🍟", pct: 68 }, b: { label: "Burger King", emoji: "🍔", pct: 32 } },
+  { question: "Which phone operating system has more users worldwide?",
+    a: { label: "Android", emoji: "🤖", pct: 70 }, b: { label: "iOS", emoji: "🍏", pct: 30 } },
+  { question: "Which color do more people pick as their favorite?",
+    a: { label: "Blue", emoji: "🔵", pct: 70 }, b: { label: "Red", emoji: "🔴", pct: 30 } },
+  { question: "Which soda brand sells more globally?",
+    a: { label: "Coca-Cola", emoji: "🥤", pct: 65 }, b: { label: "Pepsi", emoji: "🥤", pct: 35 } },
+  { question: "Which sport has a bigger global following?",
+    a: { label: "Basketball", emoji: "🏀", pct: 65 }, b: { label: "Baseball", emoji: "⚾", pct: 35 } },
+  { question: "Which streaming service has more subscribers?",
+    a: { label: "Netflix", emoji: "🎬", pct: 65 }, b: { label: "Disney+", emoji: "🏰", pct: 35 } },
+  { question: "Which platform has more monthly active users?",
+    a: { label: "Facebook", emoji: "📘", pct: 65 }, b: { label: "TikTok", emoji: "🎵", pct: 35 } },
+  { question: "Which pet is more commonly owned?",
+    a: { label: "Dogs", emoji: "🐶", pct: 60 }, b: { label: "Cats", emoji: "🐱", pct: 40 } },
+  { question: "Which drink do more people worldwide drink?",
+    a: { label: "Tea", emoji: "🍵", pct: 60 }, b: { label: "Coffee", emoji: "☕", pct: 40 } },
+  { question: "Which ice cream flavor sells more?",
+    a: { label: "Vanilla", emoji: "🍦", pct: 55 }, b: { label: "Chocolate", emoji: "🍫", pct: 45 } },
+  { question: "Which language has more native speakers?",
+    a: { label: "Spanish", emoji: "🇪🇸", pct: 55 }, b: { label: "English", emoji: "🇬🇧", pct: 45 } },
+  { question: "Which emoji gets used more?",
+    a: { label: "Face with Tears of Joy", emoji: "😂", pct: 55 }, b: { label: "Red Heart", emoji: "❤️", pct: 45 } },
+  { question: "Which phone brand ships more units worldwide?",
+    a: { label: "Samsung", emoji: "📱", pct: 52 }, b: { label: "iPhone", emoji: "🍏", pct: 48 } }
+];
+
+let pollIndex = 0;
+let pollScore = 0;
+let pollAnswered = false;
+
+const pollQuestionEl  = document.getElementById('pollQuestion');
+const pollOptionA     = document.getElementById('pollOptionA');
+const pollOptionB     = document.getElementById('pollOptionB');
+const pollEmojiA      = document.getElementById('pollEmojiA');
+const pollEmojiB      = document.getElementById('pollEmojiB');
+const pollLabelA      = document.getElementById('pollLabelA');
+const pollLabelB      = document.getElementById('pollLabelB');
+const pollResultEl    = document.getElementById('pollResult');
+const pollBarA        = document.getElementById('pollBarA');
+const pollBarB        = document.getElementById('pollBarB');
+const pollPctA        = document.getElementById('pollPctA');
+const pollPctB        = document.getElementById('pollPctB');
+const pollFeedbackEl  = document.getElementById('pollFeedback');
+const pollNextBtn     = document.getElementById('pollNextBtn');
+const pollQNum        = document.getElementById('pollQNum');
+const pollScoreLabel  = document.getElementById('pollScoreLabel');
+const pollProgressFill = document.getElementById('pollProgressFill');
+const pollCardEl      = document.getElementById('pollCard');
+const pollResultsEl   = document.getElementById('pollResults');
+const pollFinalScore  = document.getElementById('pollFinalScore');
+const pollFinalMsg    = document.getElementById('pollFinalMsg');
+const pollReplayBtn   = document.getElementById('pollReplayBtn');
+
+function openPoll() {
+  showPanel('poll');
+  document.body.className = 'view-poll';
+  pollIndex = 0;
+  pollScore = 0;
+  pollCardEl.hidden = false;
+  pollResultsEl.hidden = true;
+  loadPollQuestion();
+}
+document.getElementById('playPoll').addEventListener('click', openPoll);
+
+function loadPollQuestion() {
+  pollAnswered = false;
+  const item = POLL_ITEMS[pollIndex];
+  pollQuestionEl.textContent = item.question;
+  pollEmojiA.textContent = item.a.emoji;
+  pollLabelA.textContent = item.a.label;
+  pollEmojiB.textContent = item.b.emoji;
+  pollLabelB.textContent = item.b.label;
+  pollOptionA.disabled = false;
+  pollOptionB.disabled = false;
+  pollOptionA.className = "poll-option";
+  pollOptionB.className = "poll-option";
+  pollResultEl.hidden = true;
+  pollQNum.textContent = "Question " + (pollIndex + 1) + " of " + POLL_ITEMS.length;
+  pollScoreLabel.textContent = "Score: " + pollScore;
+  pollProgressFill.style.width = (pollIndex / POLL_ITEMS.length * 100) + "%";
+}
+
+function selectPollOption(choice) {
+  if (pollAnswered) return;
+  pollAnswered = true;
+  const item = POLL_ITEMS[pollIndex];
+  const winner = item.a.pct >= item.b.pct ? 'a' : 'b';
+  const isCorrect = choice === winner;
+  if (isCorrect) pollScore++;
+
+  pollOptionA.disabled = true;
+  pollOptionB.disabled = true;
+  (choice === 'a' ? pollOptionA : pollOptionB).classList.add('picked');
+  (winner === 'a' ? pollOptionA : pollOptionB).classList.add('winner');
+  (winner === 'a' ? pollOptionB : pollOptionA).classList.add('loser');
+
+  pollBarA.style.width = item.a.pct + "%";
+  pollBarB.style.width = item.b.pct + "%";
+  pollPctA.textContent = item.a.label + " " + item.a.pct + "%";
+  pollPctB.textContent = item.b.label + " " + item.b.pct + "%";
+
+  const winnerItem = winner === 'a' ? item.a : item.b;
+  const margin = Math.abs(item.a.pct - item.b.pct);
+  pollFeedbackEl.textContent = isCorrect
+    ? "Correct — " + winnerItem.label + " wins, " + margin + " points ahead."
+    : "Not quite — " + winnerItem.label + " actually wins, " + margin + " points ahead.";
+  pollScoreLabel.textContent = "Score: " + pollScore;
+
+  pollResultEl.hidden = false;
+}
+
+pollOptionA.addEventListener('click', () => selectPollOption('a'));
+pollOptionB.addEventListener('click', () => selectPollOption('b'));
+
+pollNextBtn.addEventListener('click', () => {
+  pollIndex++;
+  if (pollIndex >= POLL_ITEMS.length) {
+    finishPoll();
+  } else {
+    loadPollQuestion();
+  }
+});
+
+function finishPoll() {
+  pollProgressFill.style.width = "100%";
+  pollCardEl.hidden = true;
+  pollResultsEl.hidden = false;
+  pollFinalScore.textContent = pollScore + " / " + POLL_ITEMS.length;
+
+  const pct = pollScore / POLL_ITEMS.length;
+  let msg;
+  if (pct >= 0.9) msg = "Great instincts — you read the room almost every time.";
+  else if (pct >= 0.7) msg = "Solid — most of your picks matched what's actually more popular.";
+  else if (pct >= 0.5) msg = "Decent run. The close ones near the end are genuine coin flips.";
+  else msg = "Popularity is tricky to guess — give it another go.";
+  pollFinalMsg.textContent = msg;
+}
+
+pollReplayBtn.addEventListener('click', openPoll);
