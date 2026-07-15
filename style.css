@@ -1,6 +1,4 @@
-Found it. Your `style.css` is missing the entire "THE POLL" section — both the `body.view-poll` theme block and the `.poll-card` / `.poll-options` / `.poll-option` / `.poll-bar` styles are just not in the file at all. It jumps straight from "THE DRAW" to "THE RECALL" with nothing in between. That's exactly why the buttons render as bare unstyled text — there's no CSS rule for them to match, so the browser falls back to its own default. (Also missing: the `.poll-thumb svg` sizing line for the hub card icon, but that's cosmetic.)
-
-This looks like an older paste got used instead of the latest one. Easiest fix: replace your whole `style.css` with the version below — it's identical to what you have plus the missing Poll block restored.
+Here's the complete `style.css` — this is the exact same file, unchanged since it already had the Poll section fixed:
 
 ```css
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -740,5 +738,3 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
   .recall-timer-fill { transition:none !important; }
 }
 ```
-
-Replace the whole file with this, commit, and The Poll should render correctly.
