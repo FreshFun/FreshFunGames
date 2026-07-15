@@ -73,6 +73,14 @@ body.view-flags {
   color:#2b3a55;
 }
 
+/* ── draw theme: same light neutral as hub ── */
+body.view-draw {
+  background:#f4f7fb;
+  background-image:radial-gradient(rgba(120,150,200,0.12) 1.5px, transparent 1.5px);
+  background-size:26px 26px;
+  color:#2b3a55;
+}
+
 /* ══════════ HUB ══════════ */
 header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36px); }
 .logo {
@@ -119,6 +127,7 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 .recall-thumb svg { width:110px; height:110px; }
 .flag-thumb { gap:6px; }
 .flag-thumb span { font-size:52px; line-height:1; }
+.draw-thumb svg { width:90px; height:90px; color:#2f8fff; }
 
 .card-body { padding:18px 20px 22px; }
 .card-body h2 {
@@ -557,6 +566,38 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
   line-height:1;
   margin-bottom:22px;
 }
+
+/* ══════════ THE DRAW ══════════ */
+.draw-canvas-wrap {
+  margin:18px auto 0;
+  max-width:480px;
+  border-radius:14px;
+  overflow:hidden;
+  border:2px solid #d8c9a8;
+  box-shadow:inset 0 0 0 1px rgba(58,47,34,0.05);
+}
+#drawCanvas {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:480/360;
+  background:#fffef9;
+  touch-action:none;
+  cursor:crosshair;
+}
+
+.draw-toolbar {
+  display:flex; gap:10px; justify-content:center;
+  margin-top:14px;
+}
+.draw-tool-btn {
+  font-family:'Nunito',sans-serif; font-weight:800; font-size:13.5px;
+  border-radius:999px; padding:9px 18px; cursor:pointer;
+  border:2px solid #d8c9a8; background:#fffef9; color:#6b5b40;
+  transition:all 0.15s ease;
+}
+.draw-tool-btn:hover { border-color:#2f8fff; color:#2f8fff; }
+.draw-tool-btn:focus-visible { outline:3px solid #2f8fff; outline-offset:3px; }
 
 /* ══════════ THE RECALL ══════════ */
 .recall-card {
