@@ -31,7 +31,6 @@ if (canvas) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let t = 0;
 
-  // branch definitions: each forks off the main line
   const branches = [
     { fork: 0.35, dy: -34, hue: '#ff8a5c' },
     { fork: 0.55, dy:  30, hue: '#3ecf8e' },
@@ -44,7 +43,6 @@ if (canvas) {
     const startX = 24, endX = W - 24;
     const span = endX - startX;
 
-    // main timeline
     ctx.strokeStyle = '#2f8fff';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
@@ -53,10 +51,8 @@ if (canvas) {
     ctx.lineTo(endX, midY);
     ctx.stroke();
 
-    // progress of the travelling dot (0..1 loop)
     const p = reduced ? 0.65 : (t % 240) / 240;
 
-    // branches grow once the dot passes their fork point
     branches.forEach(b => {
       const grow = Math.max(0, Math.min(1, (p - b.fork) * 4));
       if (grow <= 0) return;
@@ -70,7 +66,6 @@ if (canvas) {
         fx + 60 * grow, midY + b.dy * grow
       );
       ctx.stroke();
-      // little end-node
       if (grow === 1) {
         ctx.fillStyle = b.hue;
         ctx.beginPath();
@@ -79,14 +74,12 @@ if (canvas) {
       }
     });
 
-    // tick marks
     ctx.fillStyle = '#c3cfe0';
     for (let i = 0; i <= 4; i++) {
       const x = startX + span * (i / 4);
       ctx.fillRect(x - 1, midY - 6, 2, 12);
     }
 
-    // travelling dot
     const dx = startX + span * p;
     ctx.fillStyle = '#2f8fff';
     ctx.shadowColor = 'rgba(47,143,255,0.6)';
