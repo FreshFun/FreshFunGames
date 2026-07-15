@@ -54,6 +54,14 @@ body.view-shade {
   color:#2b3a55;
 }
 
+/* ── recall theme: same light neutral as hub ── */
+body.view-recall {
+  background:#f4f7fb;
+  background-image:radial-gradient(rgba(120,150,200,0.12) 1.5px, transparent 1.5px);
+  background-size:26px 26px;
+  color:#2b3a55;
+}
+
 /* ══════════ HUB ══════════ */
 header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36px); }
 .logo {
@@ -97,6 +105,7 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 .bullseye-thumb svg { width:76px; height:76px; color:#2f8fff; }
 .pull-thumb svg { width:64px; height:64px; color:#ffb648; }
 .shade-thumb svg { width:100px; height:100px; }
+.recall-thumb svg { width:110px; height:110px; }
 
 .card-body { padding:18px 20px 22px; }
 .card-body h2 {
@@ -529,6 +538,64 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 }
 .shade-final-msg { font-weight:700; opacity:0.8; margin-bottom:22px; }
 
+/* ══════════ THE RECALL ══════════ */
+.recall-card {
+  background:#ffffff; color:#2b3a55;
+  border-radius:22px; padding:26px;
+  box-shadow:0 10px 30px rgba(43,58,85,0.16);
+}
+
+.recall-timer-bar {
+  height:8px; border-radius:999px; overflow:hidden;
+  background:rgba(43,58,85,0.1);
+  margin-bottom:20px;
+}
+.recall-timer-fill {
+  height:100%; width:100%; border-radius:999px;
+  background:#2f8fff;
+}
+.recall-timer-fill.phase-blank { background:#ff8a5c; }
+
+.recall-stage {
+  position:relative;
+  height:220px; border-radius:16px;
+  background:#f4f7fb;
+  overflow:hidden;
+  margin-bottom:6px;
+}
+
+.recall-noise { position:absolute; inset:0; }
+.recall-noise-letter {
+  position:absolute;
+  font-family:'Fredoka',sans-serif; font-weight:600;
+  font-size:15px; color:rgba(43,58,85,0.16);
+  animation:recallDrift linear forwards;
+  user-select:none;
+}
+@keyframes recallDrift {
+  from { transform:translateY(0); opacity:0.9; }
+  to { transform:translateY(var(--drift, 30px)); opacity:0; }
+}
+
+.recall-stimulus { position:absolute; inset:0; }
+.recall-item {
+  position:absolute;
+  font-family:'Fredoka',sans-serif; font-weight:700;
+  text-transform:capitalize;
+  white-space:nowrap;
+}
+.recall-item.pos-center { top:50%; left:50%; transform:translate(-50%,-50%); font-size:clamp(28px,6vw,42px); }
+.recall-item.pos-left   { top:50%; left:6%;  transform:translateY(-50%); font-size:30px; }
+.recall-item.pos-right  { top:50%; right:6%; transform:translateY(-50%); font-size:30px; }
+.recall-item.pos-top    { top:8%; left:50%; transform:translateX(-50%); font-size:30px; }
+.recall-item.pos-bottom { bottom:8%; left:50%; transform:translateX(-50%); font-size:30px; }
+
+.recall-question { margin-top:22px; text-align:center; }
+.recall-question-text {
+  font-family:'Fredoka',sans-serif; font-weight:600;
+  font-size:19px; margin-bottom:20px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   body, .game-card, .back-pill, .grade-btn, .next-btn, .pull-btn { transition:none; }
   .link { animation:none; opacity:1; transform:none; }
@@ -539,4 +606,6 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
     animation:none;
   }
   body.shake { animation:none; }
+  .recall-noise-letter { animation:none; opacity:0.4; }
+  .recall-timer-fill { transition:none !important; }
 }
