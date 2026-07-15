@@ -5,57 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FreshFun Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link href="style.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <div class="logo"><span class="fresh fun">FreshFun</span> Games</div>
-  <div class="tagline">Little games, made for fun.</div>
+  <div class="logo"><span class="fresh">FreshFun</span> Games</div>
+  <p class="tagline">Little games. Big fun. No downloads.</p>
 </header>
 
 <main class="games">
 
-  <!-- CHROMATIC PHYSICS -->
-  <button class="game-card" id="chromaCard" aria-label="Play Chromatic Physics">
-    <div class="thumb-wrap">
-      <canvas class="thumb" id="chromaThumb" width="320" height="200"></canvas>
+  <!-- The Timeline -->
+  <button class="game-card" data-game="timeline/index.html" data-title="The Timeline">
+    <div class="thumb">
+      <canvas id="timelineThumb" width="300" height="170"></canvas>
     </div>
     <div class="card-body">
-      <div class="card-name">Chromatic Physics</div>
-      <div class="card-desc">A ball, a circle, and total rainbow chaos.</div>
-      <span class="card-tag">Play</span>
+      <h2>The Timeline</h2>
+      <p>Nudge one tiny moment, then slide 100 years into the future and watch the world unravel.</p>
+      <span class="play-pill">Play</span>
     </div>
   </button>
 
-  <!-- placeholders: copy this block when you add a new game -->
-  <div class="game-card locked">
-    <div class="thumb-wrap"><div class="locked-thumb">?</div></div>
+  <!-- Coming soon -->
+  <div class="game-card soon">
+    <div class="thumb soon-thumb"><span>?</span></div>
     <div class="card-body">
-      <div class="card-name">Mystery Game</div>
-      <div class="card-desc">Something new is cooking&hellip;</div>
-      <span class="card-tag">Coming soon</span>
+      <h2>Coming soon</h2>
+      <p>A new game is brewing. Check back later!</p>
     </div>
   </div>
 
-  <div class="game-card locked">
-    <div class="thumb-wrap"><div class="locked-thumb">?</div></div>
+  <div class="game-card soon">
+    <div class="thumb soon-thumb"><span>?</span></div>
     <div class="card-body">
-      <div class="card-name">Mystery Game</div>
-      <div class="card-desc">Something new is cooking&hellip;</div>
-      <span class="card-tag">Coming soon</span>
+      <h2>Coming soon</h2>
+      <p>A new game is brewing. Check back later!</p>
     </div>
   </div>
 
 </main>
 
-<footer>FreshFun Games &middot; v1.0</footer>
-
-<!-- game loads right here, no leaving the page -->
-<div id="gameOverlay">
-  <iframe id="gameFrame" title="Chromatic Physics" allow="autoplay"></iframe>
+<!-- Fullscreen game overlay -->
+<div class="game-overlay" id="gameOverlay" aria-hidden="true">
+  <button class="back-pill" id="backBtn">&larr; FreshFun</button>
+  <iframe id="gameFrame" title="Game" allow="autoplay"></iframe>
 </div>
-<button id="exitGameBtn">&larr; FreshFun</button>
 
 <script src="script.js"></script>
 </body>
