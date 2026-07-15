@@ -4,7 +4,8 @@ const viewEls = {
   timeline: document.getElementById('gameView'),
   bullseye: document.getElementById('bullseyeView'),
   pull: document.getElementById('pullView'),
-  shade: document.getElementById('shadeView')
+  shade: document.getElementById('shadeView'),
+  recall: document.getElementById('recallView')
 };
 
 function showPanel(name) {
@@ -944,3 +945,272 @@ function finishShade() {
 }
 
 shadeReplayBtn.addEventListener('click', openShade);
+
+// ═══════════════════ THE RECALL ═══════════════════
+// A word (or letters) flashes briefly, then vanishes into a field of
+// drifting decoy letters for a delay before the recall question appears.
+// Difficulty ramps across 4 tiers of 10 questions: color recall, then
+// word recall, then position recall, then multi-letter color+position
+// binding — with the flash getting shorter and the delay getting longer.
+
+const RECALL_WORDS = [
+  "cat","dog","sun","moon","tree","book","chair","cloud","river","mountain",
+  "star","fish","bird","house","car","phone","shoe","hat","key","door",
+  "window","flower","apple","orange","grape","lemon","snow","fire","wind","rock",
+  "sand","wave","leaf","cup","plate","fork","spoon","table","lamp","clock",
+  "mirror","pillow","blanket","candle","bell","drum","kite","frog","lion","ship"
+];
+
+const RECALL_COLORS = [
+  { name: "Red",     hex: "#e53935" },
+  { name: "Blue",    hex: "#1e5fd9" },
+  { name: "Green",   hex: "#2e8b3d" },
+  { name: "Yellow",  hex: "#f4d03f" },
+  { name: "Orange",  hex: "#f0791f" },
+  { name: "Purple",  hex: "#8e44ad" },
+  { name: "Pink",    hex: "#ff8fb1" },
+  { name: "Teal",    hex: "#128f8f" },
+  { name: "Brown",   hex: "#7b4a26" },
+  { name: "Cyan",    hex: "#3fd0d4" },
+  { name: "Lime",    hex: "#9ecb3c" },
+  { name: "Magenta", hex: "#d6249b" }
+];
+
+const RECALL_POSITIONS = ["left", "right", "top", "bottom", "center"];
+
+const RECALL_TOTAL = 40;
+
+const RECALL_TIER_CONFIG = {
+  1: { hold: 2400, blank: 1400, noise: 6  },
+  2: { hold: 2000, blank: 2400, noise: 11 },
+  3: { hold: 1700, blank: 3400, noise: 17 },
+  4: { hold: 1500, blank: 4200, noise: 24 }
+};
+
+function recallTierFor(qIndex) {
+  if (qIndex < 10) return 1;
+  if (qIndex < 20) return 2;
+  if (qIndex < 30) return 3;
+  return 4;
+}
+
+function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomLetter() { return String.fromCharCode(65 + Math.floor(Math.random() * 26)); }
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function buildRecallOptions(correct, pool) {
+  const others = pool.filter(p => p !== correct);
+  const order = shuffledOrder(others.length);
+  const picks = order.slice(0, 3).map(i => others[i]);
+  const opts = [correct, ...picks];
+  const finalOrder = shuffledOrder(opts.length);
+  return finalOrder.map(i => opts[i]);
+}
+
+let recallIndex = 0;
+let recallScore = 0;
+let recallCurrent = null;
+let recallAnswered = false;
+let recallTimers = [];
+
+const recallCardEl      = document.getElementById('recallCard');
+const recallStageEl     = document.getElementById('recallStage');
+const recallNoiseEl     = document.getElementById('recallNoise');
+const recallStimulusEl  = document.getElementById('recallStimulus');
+const recallTimerFillEl = document.getElementById('recallTimerFill');
+const recallQuestionEl  = document.getElementById('recallQuestion');
+const recallQuestionTextEl = document.getElementById('recallQuestionText');
+const recallOptionsEl   = document.getElementById('recallOptions');
+const recallFeedbackEl  = document.getElementById('recallFeedback');
+const recallQNum        = document.getElementById('recallQNum');
+const recallScoreLabel  = document.getElementById('recallScoreLabel');
+const recallProgressFill = document.getElementById('recallProgressFill');
+const recallResultsEl   = document.getElementById('recallResults');
+const recallFinalScore  = document.getElementById('recallFinalScore');
+const recallFinalMsg    = document.getElementById('recallFinalMsg');
+const recallReplayBtn   = document.getElementById('recallReplayBtn');
+
+function openRecall() {
+  showPanel('recall');
+  document.body.className = 'view-recall';
+  recallIndex = 0;
+  recallScore = 0;
+  recallCardEl.hidden = false;
+  recallResultsEl.hidden = true;
+  loadRecallQuestion();
+}
+document.getElementById('playRecall').addEventListener('click', openRecall);
+
+function clearRecallTimers() {
+  recallTimers.forEach(t => clearTimeout(t));
+  recallTimers = [];
+}
+
+function spawnRecallNoise(count) {
+  recallNoiseEl.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('span');
+    s.className = 'recall-noise-letter';
+    s.textContent = randomLetter();
+    s.style.left = Math.random() * 90 + '%';
+    s.style.top = Math.random() * 84 + '%';
+    s.style.setProperty('--drift', (Math.random() * 44 - 22) + 'px');
+    s.style.animationDuration = (2.2 + Math.random() * 2.4) + 's';
+    recallNoiseEl.appendChild(s);
+  }
+}
+
+function clearRecallNoise() {
+  recallNoiseEl.innerHTML = "";
+}
+
+function renderRecallWord(word, hex, pos) {
+  recallStimulusEl.innerHTML =
+    `<span class="recall-item pos-${pos}" style="color:${hex}">${word}</span>`;
+}
+
+function renderRecallLetters(letters) {
+  recallStimulusEl.innerHTML = letters.map(l =>
+    `<span class="recall-item pos-${l.pos}" style="color:${l.color.hex}">${l.letter}</span>`
+  ).join('');
+}
+
+function buildRecallQuestion(index) {
+  const tier = recallTierFor(index);
+  const cfg = RECALL_TIER_CONFIG[tier];
+  const stim = { tier, hold: cfg.hold, blank: cfg.blank, noise: cfg.noise };
+
+  if (tier === 1) {
+    const word = randomFrom(RECALL_WORDS);
+    const color = randomFrom(RECALL_COLORS);
+    stim.render = () => renderRecallWord(word, color.hex, "center");
+    stim.question = `What color was the word "${word}"?`;
+    stim.correct = color.name;
+    stim.options = buildRecallOptions(color.name, RECALL_COLORS.map(c => c.name));
+
+  } else if (tier === 2) {
+    const word = randomFrom(RECALL_WORDS);
+    const color = randomFrom(RECALL_COLORS);
+    stim.render = () => renderRecallWord(word, color.hex, "center");
+    stim.question = "What word just flashed on screen?";
+    stim.correct = word;
+    stim.options = buildRecallOptions(word, RECALL_WORDS);
+
+  } else if (tier === 3) {
+    const word = randomFrom(RECALL_WORDS);
+    const color = randomFrom(RECALL_COLORS);
+    const pos = randomFrom(RECALL_POSITIONS);
+    stim.render = () => renderRecallWord(word, color.hex, pos);
+    stim.question = `Where was the word "${word}" positioned on the screen?`;
+    stim.correct = capitalize(pos);
+    stim.options = buildRecallOptions(capitalize(pos), RECALL_POSITIONS.map(capitalize));
+
+  } else {
+    const positions = ["left", "right", "top", "bottom"];
+    const letters = positions.map(p => ({
+      pos: p,
+      letter: randomLetter(),
+      color: randomFrom(RECALL_COLORS)
+    }));
+    const askPos = randomFrom(positions);
+    const target = letters.find(l => l.pos === askPos);
+    stim.render = () => renderRecallLetters(letters);
+    stim.question = `What color was the letter on the ${askPos.toUpperCase()} side of the screen?`;
+    stim.correct = target.color.name;
+    stim.options = buildRecallOptions(target.color.name, RECALL_COLORS.map(c => c.name));
+  }
+
+  return stim;
+}
+
+function loadRecallQuestion() {
+  clearRecallTimers();
+  recallAnswered = false;
+  recallQuestionEl.hidden = true;
+  recallFeedbackEl.textContent = "";
+  recallQNum.textContent = "Question " + (recallIndex + 1) + " of " + RECALL_TOTAL;
+  recallScoreLabel.textContent = "Score: " + recallScore;
+  recallProgressFill.style.width = (recallIndex / RECALL_TOTAL * 100) + "%";
+
+  recallCurrent = buildRecallQuestion(recallIndex);
+
+  spawnRecallNoise(recallCurrent.noise);
+  recallCurrent.render();
+
+  recallTimerFillEl.classList.remove('phase-blank');
+  const total = recallCurrent.hold + recallCurrent.blank;
+  recallTimerFillEl.style.transition = 'none';
+  recallTimerFillEl.style.width = '100%';
+  void recallTimerFillEl.offsetWidth; // restart transition
+  recallTimerFillEl.style.transition = `width ${total}ms linear`;
+  recallTimerFillEl.style.width = '0%';
+
+  recallTimers.push(setTimeout(() => {
+    recallStimulusEl.innerHTML = "";
+    recallTimerFillEl.classList.add('phase-blank');
+  }, recallCurrent.hold));
+
+  recallTimers.push(setTimeout(() => {
+    showRecallQuestion();
+  }, total));
+}
+
+function showRecallQuestion() {
+  clearRecallNoise();
+  recallQuestionTextEl.textContent = recallCurrent.question;
+  recallOptionsEl.innerHTML = "";
+  recallCurrent.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.addEventListener('click', () => answerRecall(opt, btn));
+    recallOptionsEl.appendChild(btn);
+  });
+  recallQuestionEl.hidden = false;
+}
+
+function answerRecall(chosen, btnEl) {
+  if (recallAnswered) return;
+  recallAnswered = true;
+  const isCorrect = chosen === recallCurrent.correct;
+  if (isCorrect) recallScore++;
+
+  [...recallOptionsEl.children].forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === recallCurrent.correct) btn.classList.add('correct');
+    else if (btn === btnEl) btn.classList.add('wrong');
+  });
+
+  recallFeedbackEl.textContent = isCorrect
+    ? "Yes — that's right."
+    : "Nope — it was " + recallCurrent.correct + ".";
+  recallScoreLabel.textContent = "Score: " + recallScore;
+
+  recallTimers.push(setTimeout(() => {
+    recallIndex++;
+    if (recallIndex >= RECALL_TOTAL) {
+      finishRecall();
+    } else {
+      loadRecallQuestion();
+    }
+  }, 1100));
+}
+
+function finishRecall() {
+  clearRecallTimers();
+  clearRecallNoise();
+  recallStimulusEl.innerHTML = "";
+  recallProgressFill.style.width = "100%";
+  recallCardEl.hidden = true;
+  recallResultsEl.hidden = false;
+  recallFinalScore.textContent = recallScore + " / " + RECALL_TOTAL;
+
+  const pct = recallScore / RECALL_TOTAL;
+  let msg;
+  if (pct >= 0.9) msg = "A steel trap. The noise never stood a chance.";
+  else if (pct >= 0.7) msg = "Sharp memory — the late rounds barely slowed you down.";
+  else if (pct >= 0.5) msg = "Solid effort. Those multi-letter rounds at the end are brutal.";
+  else msg = "The distractions got you — give it another run.";
+  recallFinalMsg.textContent = msg;
+}
+
+recallReplayBtn.addEventListener('click', openRecall);
