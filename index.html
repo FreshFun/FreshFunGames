@@ -28,13 +28,21 @@
       </div>
     </button>
 
-    <div class="game-card soon">
-      <div class="thumb soon-thumb"><span>?</span></div>
-      <div class="card-body">
-        <h2>Coming soon</h2>
-        <p>A new game is brewing. Check back later!</p>
+    <button class="game-card" id="playBullseye">
+      <div class="thumb bullseye-thumb">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="100" cy="100" r="70"/>
+          <circle cx="100" cy="100" r="45"/>
+          <circle cx="100" cy="100" r="18" fill="currentColor"/>
+          <path d="M100 10 L100 30 M100 170 L100 190 M10 100 L30 100 M170 100 L190 100"/>
+        </svg>
       </div>
-    </div>
+      <div class="card-body">
+        <h2>The Bullseye</h2>
+        <p>You get a word and a picture. Describe exactly what it is — vague answers barely register.</p>
+        <span class="play-pill">Play</span>
+      </div>
+    </button>
 
     <div class="game-card soon">
       <div class="thumb soon-thumb"><span>?</span></div>
@@ -48,7 +56,7 @@
 
 <!-- ══════════ THE TIMELINE ══════════ -->
 <div id="gameView" hidden>
-  <button class="back-pill" id="backBtn">&larr; FreshFun</button>
+  <button class="back-pill" id="backBtnTimeline">&larr; FreshFun</button>
 
   <div class="page">
     <header class="game-header">
@@ -85,6 +93,37 @@
     <section class="chain" id="chain" aria-live="polite"></section>
 
     <p class="hint" id="hint">Slide the bar forward to begin &rarr;</p>
+  </div>
+</div>
+
+<!-- ══════════ THE BULLSEYE ══════════ -->
+<div id="bullseyeView" hidden>
+  <button class="back-pill" id="backBtnBullseye">&larr; FreshFun</button>
+
+  <div class="page">
+    <header class="game-header">
+      <h1>The Bullseye</h1>
+      <p class="sub">Say exactly what it is. Vague doesn't cut it.</p>
+    </header>
+
+    <section class="specimen-card">
+      <span class="eyebrow" id="specimenNum">Specimen No. 1</span>
+      <div class="specimen-illustration" id="specimenSvg"></div>
+      <h2 class="specimen-word" id="specimenWord">cat</h2>
+
+      <label class="answer-label" for="answerBox">Describe it as precisely as you can</label>
+      <textarea id="answerBox" rows="3" placeholder="What exactly is it — and what makes it unmistakably this, not something else?"></textarea>
+      <button class="grade-btn" id="gradeBtn">Grade my definition</button>
+    </section>
+
+    <section class="result-card" id="resultCard" hidden>
+      <div class="score-ring" id="scoreRing">
+        <span class="score-num" id="scoreNum">0%</span>
+      </div>
+      <p class="score-feedback" id="scoreFeedback"></p>
+      <div class="traits" id="traitsList"></div>
+      <button class="next-btn" id="nextBtn">Next word &rarr;</button>
+    </section>
   </div>
 </div>
 
