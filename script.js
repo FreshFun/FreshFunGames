@@ -1,43 +1,39 @@
-// ── Fullscreen overlay ──────────────────────────────
-const overlay = document.getElementById('gameOverlay');
-const frame   = document.getElementById('gameFrame');
-const backBtn = document.getElementById('backBtn');
+// ═══════════════════ VIEW SWITCHING ═══════════════════
+const hubView  = document.getElementById('hubView');
+const gameView = document.getElementById('gameView');
+const backBtn  = document.getElementById('backBtn');
+const playBtn  = document.getElementById('playTimeline');
 
-document.querySelectorAll('.game-card[data-game]').forEach(card => {
-  card.addEventListener('click', () => {
-    frame.src = card.dataset.game;
-    overlay.classList.add('open');
-    overlay.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  });
-});
-
-function closeGame() {
-  overlay.classList.remove('open');
-  overlay.setAttribute('aria-hidden', 'true');
-  frame.src = ''; // fully stop the game
-  document.body.style.overflow = '';
+function openGame() {
+  hubView.hidden = true;
+  gameView.hidden = false;
+  document.body.className = 'view-game t0';
+  selectScenario(0); // reset to fresh state each time
 }
+function closeGame() {
+  gameView.hidden = true;
+  hubView.hidden = false;
+  document.body.className = 'view-hub';
+}
+playBtn.addEventListener('click', openGame);
 backBtn.addEventListener('click', closeGame);
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && overlay.classList.contains('open')) closeGame();
+  if (e.key === 'Escape' && !gameView.hidden) closeGame();
 });
 
-// ── Live thumbnail: a dot travelling a branching timeline ──
+// ═══════════════════ HUB THUMBNAIL ═══════════════════
 const canvas = document.getElementById('timelineThumb');
 if (canvas) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let t = 0;
-
   const branches = [
     { fork: 0.35, dy: -34, hue: '#ff8a5c' },
     { fork: 0.55, dy:  30, hue: '#3ecf8e' },
     { fork: 0.72, dy: -22, hue: '#b07cff' }
   ];
-
-  function draw() {
+  function drawThumb() {
     ctx.clearRect(0, 0, W, H);
     const midY = H / 2 + 8;
     const startX = 24, endX = W - 24;
@@ -90,7 +86,23 @@ if (canvas) {
     ctx.shadowBlur = 0;
 
     t++;
-    if (!reduced) requestAnimationFrame(draw);
+    if (!reduced) requestAnimationFrame(drawThumb);
   }
-  draw();
+  drawThumb();
 }
+
+// ═══════════════════ THE TIMELINE GAME ═══════════════════
+const ERAS = ["+1 Day", "+1 Year", "+10 Years", "+100 Years"];
+const YEARS = ["Today", "Tomorrow", "2027", "2036", "2126"];
+
+const SCENARIOS = [
+  {
+    name: "The Bus",
+    event: "A man misses his morning bus by 3 seconds.",
+    vars: [
+      { key: "rain", label: "☔ Make it rain" },
+      { key: "keys", label: "🔑 He drops his keys" }
+    ],
+    chain(v) {
+      if (!v.rain && !v.keys) return [
+        "
