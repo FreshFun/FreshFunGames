@@ -28,6 +28,24 @@ body.view-bullseye {
   color:#3a2f22;
 }
 
+/* ── pull theme: deep cosmic sky ── */
+body.view-pull {
+  background-color:#0b0d1f;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.09) 1px, transparent 1px),
+    radial-gradient(ellipse at top, #1b1f3b 0%, #0b0d1f 55%, #05060f 100%);
+  background-size:34px 34px, 100% 100%;
+  color:#eef1fb;
+}
+body.shake { animation:shake 0.4s ease; }
+@keyframes shake {
+  0%,100% { transform:translate(0,0); }
+  20% { transform:translate(-6px,4px); }
+  40% { transform:translate(6px,-4px); }
+  60% { transform:translate(-4px,-6px); }
+  80% { transform:translate(4px,6px); }
+}
+
 /* ══════════ HUB ══════════ */
 header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36px); }
 .logo {
@@ -61,8 +79,6 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
   outline:none;
 }
 .game-card:focus-visible { box-shadow:0 0 0 3px #2f8fff, 0 12px 26px rgba(43,58,85,0.14); }
-.game-card.soon { cursor:default; opacity:0.75; }
-.game-card.soon:hover { transform:none; box-shadow:0 4px 14px rgba(43,58,85,0.08); }
 
 .thumb {
   height:170px; background:#eef3fa;
@@ -71,10 +87,7 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 }
 .thumb canvas { width:100%; height:100%; display:block; }
 .bullseye-thumb svg { width:76px; height:76px; color:#2f8fff; }
-.soon-thumb span {
-  font-family:'Fredoka',sans-serif; font-size:56px; font-weight:600;
-  color:#c3cfe0;
-}
+.pull-thumb svg { width:64px; height:64px; color:#ffb648; }
 
 .card-body { padding:18px 20px 22px; }
 .card-body h2 {
@@ -326,8 +339,135 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 .next-btn:hover { transform:translateY(-2px); }
 .next-btn:focus-visible { outline:3px solid #2f8fff; outline-offset:3px; }
 
+/* ══════════ THE PULL ══════════ */
+.pull-stage {
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:230px; margin:10px 0 6px;
+}
+.pull-orb {
+  width:150px; height:150px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), #cfe0ff 40%, #2f8fff 75%, #163f7a 100%);
+  box-shadow:0 0 44px rgba(47,143,255,0.55), inset 0 0 30px rgba(255,255,255,0.4);
+  animation:orbFloat 3.4s ease-in-out infinite;
+}
+.pull-orb.spinning { animation:orbSpin 1.1s cubic-bezier(.2,.7,.3,1) 1; }
+@keyframes orbFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+@keyframes orbSpin {
+  0%   { transform:rotate(0deg) scale(1); filter:brightness(1); }
+  40%  { transform:rotate(540deg) scale(1.16); filter:brightness(1.5); }
+  70%  { transform:rotate(900deg) scale(0.9); }
+  100% { transform:rotate(1080deg) scale(1); filter:brightness(1); }
+}
+
+.pull-result { text-align:center; margin-top:18px; }
+.pull-tier { font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(30px,7vw,48px); display:inline-block; }
+.pull-odds { margin-top:6px; font-weight:700; font-size:14.5px; opacity:0.75; }
+
+.tier-common     { color:#9aa4b2; }
+.tier-uncommon   { color:#3ecf8e; }
+.tier-unusual    { color:#2bc4c4; }
+.tier-rare       { color:#2f8fff; text-shadow:0 0 16px rgba(47,143,255,0.45); }
+.tier-veryrare   { color:#8a5cff; text-shadow:0 0 18px rgba(138,92,255,0.5); }
+.tier-epic       { color:#c23cff; text-shadow:0 0 20px rgba(194,60,255,0.55); animation:tierPulse 1.6s ease-in-out infinite; }
+
+.tier-legendary {
+  background:linear-gradient(90deg,#ffd36b,#ff9a3c,#ffd36b);
+  background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 3s linear infinite, tierPulse 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 14px rgba(255,180,72,0.6));
+}
+.tier-mythical {
+  background:linear-gradient(90deg,#ff4d6d,#ff8a3c,#ff4d6d);
+  background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 2.6s linear infinite, tierPulse 1.4s ease-in-out infinite;
+  filter:drop-shadow(0 0 16px rgba(255,77,109,0.6));
+}
+.tier-ethereal {
+  background:linear-gradient(90deg,#b8faff,#ffffff,#b8faff);
+  background-size:220% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 2.4s linear infinite;
+  filter:drop-shadow(0 0 18px rgba(184,250,255,0.7));
+}
+.tier-prismatic {
+  background:linear-gradient(90deg,#ff5c8a,#ffd36b,#7bff9e,#5cc9ff,#b07cff,#ff5c8a);
+  background-size:300% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 1.8s linear infinite;
+  filter:drop-shadow(0 0 20px rgba(255,255,255,0.5));
+}
+.tier-ultra {
+  background:linear-gradient(90deg,#00e5ff,#ff2ec4,#00e5ff);
+  background-size:260% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 1.4s linear infinite, tierFlicker 0.18s steps(2) infinite;
+  filter:drop-shadow(0 0 24px rgba(0,229,255,0.7));
+}
+.tier-quantum {
+  background:linear-gradient(90deg,#7effc4,#00e5ff,#c86bff,#7effc4);
+  background-size:300% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 1.1s linear infinite, tierFlicker 0.12s steps(2) infinite;
+  filter:drop-shadow(0 0 26px rgba(200,107,255,0.8));
+}
+.tier-singularity {
+  background:linear-gradient(90deg,#ff5c8a,#ffd36b,#7bff9e,#5cc9ff,#b07cff,#ff5c8a);
+  background-size:300% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:tierShift 1s linear infinite, tierHue 3s linear infinite;
+  filter:drop-shadow(0 0 30px rgba(255,255,255,0.85));
+}
+
+@keyframes tierShift { to { background-position:200% center; } }
+@keyframes tierHue { 0% { filter:hue-rotate(0deg) drop-shadow(0 0 30px rgba(255,255,255,0.85)); } 100% { filter:hue-rotate(360deg) drop-shadow(0 0 30px rgba(255,255,255,0.85)); } }
+@keyframes tierPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.04); } }
+@keyframes tierFlicker { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
+
+.particle {
+  position:absolute; top:50%; left:50%;
+  width:7px; height:7px; border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:particleFly 0.85s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes particleFly {
+  to { transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))); opacity:0; }
+}
+
+.pull-btn {
+  display:block; margin:8px auto 0;
+  font-family:'Nunito',sans-serif; font-weight:800; font-size:17px;
+  background:#2f8fff; color:#fff; border:none;
+  border-radius:999px; padding:15px 50px; cursor:pointer;
+  box-shadow:0 8px 22px rgba(47,143,255,0.4);
+  transition:transform 0.15s ease;
+}
+.pull-btn:hover:not(:disabled) { transform:translateY(-2px); }
+.pull-btn:disabled { opacity:0.6; cursor:default; }
+.pull-btn:focus-visible { outline:3px solid #fff; outline-offset:3px; }
+
+.pull-stats {
+  display:flex; gap:26px; justify-content:center;
+  margin-top:24px; font-weight:700; font-size:14px; opacity:0.9;
+}
+.pull-stats strong { font-weight:800; }
+
+.pull-legend {
+  display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+  margin-top:30px; max-width:600px; margin-left:auto; margin-right:auto;
+}
+.legend-item {
+  font-size:12px; font-weight:800; padding:6px 12px; border-radius:999px;
+  border:2px solid currentColor; opacity:0.35;
+  background:rgba(255,255,255,0.05);
+  transition:opacity 0.3s ease;
+}
+.legend-item.discovered { opacity:1; }
+
 @media (prefers-reduced-motion: reduce) {
-  body, .game-card, .back-pill, .grade-btn, .next-btn { transition:none; }
+  body, .game-card, .back-pill, .grade-btn, .next-btn, .pull-btn { transition:none; }
   .link { animation:none; opacity:1; transform:none; }
   .link.ripple { animation:none; }
+  .pull-orb { animation:none; }
+  .pull-orb.spinning { animation:none; }
+  .tier-epic, .tier-legendary, .tier-mythical, .tier-ethereal, .tier-prismatic, .tier-ultra, .tier-quantum, .tier-singularity {
+    animation:none;
+  }
+  body.shake { animation:none; }
 }
