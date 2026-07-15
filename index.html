@@ -88,6 +88,17 @@
         <span class="play-pill">Play</span>
       </div>
     </button>
+
+    <button class="game-card" id="playFlags">
+      <div class="thumb flag-thumb">
+        <span>🇯🇵</span><span>🇧🇷</span><span>🇫🇷</span>
+      </div>
+      <div class="card-body">
+        <h2>The Flags</h2>
+        <p>30 flags. Easy ones first — then the lookalikes start showing up.</p>
+        <span class="play-pill">Play</span>
+      </div>
+    </button>
   </main>
 </div>
 
@@ -265,6 +276,40 @@
       <div class="shade-final-score" id="recallFinalScore">0 / 40</div>
       <p class="shade-final-msg" id="recallFinalMsg"></p>
       <button class="grade-btn" id="recallReplayBtn">Play again</button>
+    </section>
+  </div>
+</div>
+
+<!-- ══════════ THE FLAGS ══════════ -->
+<div id="flagsView" hidden>
+  <button class="back-pill" id="backBtnFlags">&larr; FreshFun</button>
+
+  <div class="page">
+    <header class="game-header">
+      <h1>The Flags</h1>
+      <p class="sub">30 flags. Easy at first — then the lookalikes show up.</p>
+    </header>
+
+    <div class="shade-progress">
+      <div class="shade-progress-bar"><div class="shade-progress-fill" id="flagsProgressFill"></div></div>
+      <div class="shade-progress-labels">
+        <span id="flagsQNum">Question 1 of 30</span>
+        <span id="flagsScoreLabel">Score: 0</span>
+      </div>
+    </div>
+
+    <section class="shade-card" id="flagsCard">
+      <div class="flag-display" id="flagDisplay">🇯🇵</div>
+      <p class="shade-question">Which country's flag is this?</p>
+      <div class="shade-options" id="flagsOptions"></div>
+      <p class="shade-feedback" id="flagsFeedback"></p>
+    </section>
+
+    <section class="shade-results" id="flagsResults" hidden>
+      <span class="eyebrow">Final score</span>
+      <div class="shade-final-score" id="flagsFinalScore">0 / 30</div>
+      <p class="shade-final-msg" id="flagsFinalMsg"></p>
+      <button class="grade-btn" id="flagsReplayBtn">Play again</button>
     </section>
   </div>
 </div>
