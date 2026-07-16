@@ -255,6 +255,7 @@ header { text-align:center; padding:clamp(48px,9vh,90px) 20px clamp(20px,4vh,36p
 .shade-thumb svg, .recall-thumb svg, .poll-thumb svg { filter:drop-shadow(0 3px 5px rgba(10,90,160,0.25)); }
 .shade-thumb svg { width:100px; height:100px; }
 .recall-thumb svg { width:110px; height:110px; }
+.poll-thumb svg { width:100px; height:100px; }
 .flag-thumb { gap:6px; }
 .flag-thumb span { font-size:52px; line-height:1; filter:drop-shadow(0 3px 4px rgba(10,90,160,0.25)); }
 .draw-thumb svg { width:90px; height:90px; color:#0e8fdd; filter:drop-shadow(0 3px 4px rgba(10,90,160,0.3)); }
