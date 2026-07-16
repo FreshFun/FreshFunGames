@@ -88,6 +88,11 @@ const SFX = (() => {
     wrong() {
       tone({ freq: 220, type: 'sawtooth', dur: 0.22, vol: 0.08, slide: -70 });
     },
+    // hazard pop, used by The Current
+    burst() {
+      splash({ dur: 0.16, vol: 0.13, freq: 1900, slide: -1300, q: 1.4 });
+      tone({ freq: 190, type: 'sawtooth', dur: 0.12, vol: 0.08, slide: -90 });
+    },
     // graded reveal: pitch of the chime tracks the score
     score(pct) {
       if (pct >= 70) {
@@ -205,7 +210,8 @@ const viewEls = {
   recall: document.getElementById('recallView'),
   flags: document.getElementById('flagsView'),
   draw: document.getElementById('drawView'),
-  poll: document.getElementById('pollView')
+  poll: document.getElementById('pollView'),
+  current: document.getElementById('currentView')
 };
 
 function showPanel(name) {
@@ -2006,3 +2012,359 @@ function finishPoll() {
 }
 
 pollReplayBtn.addEventListener('click', openPoll);
+
+// ═══════════════════ THE CURRENT ═══════════════════
+// Drag-controlled: the droplet follows the pointer only while pressed
+// near it, like nudging a real bead of water. Hazards drift on three
+// motion types (static / orbit / sweep) and knock the droplet back on
+// contact; reach the drain without too many bumps. 8 hand-placed
+// levels ramp from a single blocker to a dense multi-hazard finale.
+
+const DROPLET_R = 15;
+
+const CURRENT_LEVELS = [
+  {
+    start: { x: 55, y: 180 }, goal: { x: 425, y: 180, r: 30 },
+    hazards: [
+      { type: 'static', x: 240, y: 180, r: 36 }
+    ]
+  },
+  {
+    start: { x: 50, y: 70 }, goal: { x: 430, y: 290, r: 30 },
+    hazards: [
+      { type: 'static', x: 160, y: 150, r: 30 },
+      { type: 'static', x: 320, y: 210, r: 34 }
+    ]
+  },
+  {
+    start: { x: 50, y: 180 }, goal: { x: 430, y: 180, r: 30 },
+    hazards: [
+      { type: 'orbit', cx: 250, cy: 180, orbitR: 72, r: 24, speed: 0.0016, phase: 0 },
+      { type: 'static', x: 150, y: 70, r: 22 }
+    ]
+  },
+  {
+    start: { x: 50, y: 55 }, goal: { x: 430, y: 305, r: 30 },
+    hazards: [
+      { type: 'sweep', ax: 160, ay: 40, bx: 160, by: 320, r: 26, speed: 0.0018, phase: 0 },
+      { type: 'static', x: 330, y: 110, r: 24 }
+    ]
+  },
+  {
+    start: { x: 50, y: 180 }, goal: { x: 430, y: 180, r: 30 },
+    hazards: [
+      { type: 'orbit', cx: 190, cy: 180, orbitR: 62, r: 22, speed: 0.002, phase: 0 },
+      { type: 'orbit', cx: 330, cy: 180, orbitR: 62, r: 22, speed: 0.002, phase: Math.PI }
+    ]
+  },
+  {
+    start: { x: 45, y: 55 }, goal: { x: 430, y: 305, r: 30 },
+    hazards: [
+      { type: 'sweep', ax: 170, ay: 30, bx: 170, by: 210, r: 24, speed: 0.002, phase: 0 },
+      { type: 'orbit', cx: 335, cy: 220, orbitR: 52, r: 22, speed: 0.0022, phase: 1 },
+      { type: 'static', x: 255, y: 335, r: 20 }
+    ]
+  },
+  {
+    start: { x: 40, y: 335 }, goal: { x: 440, y: 25, r: 30 },
+    hazards: [
+      { type: 'orbit', cx: 150, cy: 250, orbitR: 55, r: 20, speed: 0.0026, phase: 0 },
+      { type: 'orbit', cx: 265, cy: 160, orbitR: 55, r: 20, speed: 0.0026, phase: 2 },
+      { type: 'sweep', ax: 365, ay: 55, bx: 365, by: 300, r: 24, speed: 0.0022, phase: 0 }
+    ]
+  },
+  {
+    start: { x: 50, y: 180 }, goal: { x: 430, y: 180, r: 30 },
+    hazards: [
+      { type: 'orbit', cx: 155, cy: 180, orbitR: 58, r: 20, speed: 0.003, phase: 0 },
+      { type: 'orbit', cx: 250, cy: 180, orbitR: 58, r: 20, speed: 0.003, phase: 2.1 },
+      { type: 'orbit', cx: 345, cy: 180, orbitR: 58, r: 20, speed: 0.003, phase: 4.2 },
+      { type: 'sweep', ax: 200, ay: 35, bx: 200, by: 325, r: 22, speed: 0.0026, phase: 0 }
+    ]
+  }
+];
+
+let curLevelIdx = 0;
+let curPos = { x: 0, y: 0 };
+let curDragging = false;
+let curFinished = false;
+let curRunning = false;
+let curRAF = null;
+let curLevelStartTs = 0;
+let curElapsed = 0;
+let curBumpsLevel = 0;
+let curTotalBumps = 0;
+let curTotalTime = 0;
+let curBumpGrace = 0;
+let curDrainSpin = 0;
+
+const currentCanvas       = document.getElementById('currentCanvas');
+const currentCtx          = currentCanvas.getContext('2d');
+const currentCanvasWrap   = document.getElementById('currentCanvasWrap');
+const currentCard         = document.getElementById('currentCard');
+const currentResults      = document.getElementById('currentResults');
+const currentLevelNum     = document.getElementById('currentLevelNum');
+const currentBumpLabel    = document.getElementById('currentBumpLabel');
+const currentProgressFill = document.getElementById('currentProgressFill');
+const currentTimer        = document.getElementById('currentTimer');
+const currentHint         = document.getElementById('currentHint');
+const currentOverlay      = document.getElementById('currentOverlay');
+const currentOverlayEyebrow = document.getElementById('currentOverlayEyebrow');
+const currentOverlayTime  = document.getElementById('currentOverlayTime');
+const currentOverlayMsg   = document.getElementById('currentOverlayMsg');
+const currentNextBtn      = document.getElementById('currentNextBtn');
+const currentFinalTime    = document.getElementById('currentFinalTime');
+const currentFinalMsg     = document.getElementById('currentFinalMsg');
+const currentReplayBtn    = document.getElementById('currentReplayBtn');
+
+function openCurrent() {
+  showPanel('current');
+  document.body.className = 'view-current';
+  curLevelIdx = 0;
+  curTotalTime = 0;
+  curTotalBumps = 0;
+  currentResults.hidden = true;
+  currentCard.hidden = false;
+  loadCurrentLevel();
+}
+document.getElementById('playCurrent').addEventListener('click', openCurrent);
+
+document.getElementById('backBtnCurrent').addEventListener('click', () => {
+  curRunning = false;
+  cancelCurrentLoop();
+});
+
+function cancelCurrentLoop() {
+  if (curRAF) cancelAnimationFrame(curRAF);
+  curRAF = null;
+}
+
+function loadCurrentLevel() {
+  cancelCurrentLoop();
+  const lvl = CURRENT_LEVELS[curLevelIdx];
+  curPos = { x: lvl.start.x, y: lvl.start.y };
+  curDragging = false;
+  curFinished = false;
+  curBumpsLevel = 0;
+  curElapsed = 0;
+  curBumpGrace = 0;
+  curLevelStartTs = performance.now();
+
+  currentOverlay.hidden = true;
+  currentHint.textContent = "Press and drag the droplet to start";
+  currentHint.classList.remove('hidden');
+  currentLevelNum.textContent = "Level " + (curLevelIdx + 1) + " of " + CURRENT_LEVELS.length;
+  currentBumpLabel.textContent = "Bumps: 0";
+  currentTimer.textContent = "0.0s";
+  currentProgressFill.style.width = (curLevelIdx / CURRENT_LEVELS.length * 100) + "%";
+
+  curRunning = true;
+  curRAF = requestAnimationFrame(currentLoop);
+}
+
+function currentCanvasPoint(e) {
+  const rect = currentCanvas.getBoundingClientRect();
+  const scaleX = currentCanvas.width / rect.width;
+  const scaleY = currentCanvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+currentCanvas.addEventListener('pointerdown', e => {
+  if (curFinished) return;
+  e.preventDefault();
+  const p = currentCanvasPoint(e);
+  const dist = Math.hypot(p.x - curPos.x, p.y - curPos.y);
+  if (dist <= DROPLET_R + 26) {
+    curDragging = true;
+    currentHint.classList.add('hidden');
+    if (currentCanvas.setPointerCapture) currentCanvas.setPointerCapture(e.pointerId);
+    SFX.click();
+  }
+});
+currentCanvas.addEventListener('pointermove', e => {
+  if (!curDragging || curFinished) return;
+  const p = currentCanvasPoint(e);
+  curPos.x = Math.min(Math.max(p.x, DROPLET_R), currentCanvas.width - DROPLET_R);
+  curPos.y = Math.min(Math.max(p.y, DROPLET_R), currentCanvas.height - DROPLET_R);
+});
+function endCurrentDrag() { curDragging = false; }
+currentCanvas.addEventListener('pointerup', endCurrentDrag);
+currentCanvas.addEventListener('pointercancel', endCurrentDrag);
+currentCanvas.addEventListener('pointerleave', endCurrentDrag);
+
+function resolveHazardPos(h, t) {
+  if (h.type === 'static') return { x: h.x, y: h.y, r: h.r };
+  if (h.type === 'orbit') {
+    const a = t * h.speed + h.phase;
+    return { x: h.cx + Math.cos(a) * h.orbitR, y: h.cy + Math.sin(a) * h.orbitR, r: h.r };
+  }
+  // sweep
+  const s = (Math.sin(t * h.speed + h.phase) + 1) / 2;
+  return { x: h.ax + (h.bx - h.ax) * s, y: h.ay + (h.by - h.ay) * s, r: h.r };
+}
+
+function handleCurrentBump(h, ts, dist) {
+  curBumpsLevel++;
+  curTotalBumps++;
+  currentBumpLabel.textContent = "Bumps: " + curBumpsLevel;
+  SFX.burst();
+
+  const d = dist || 1;
+  const dx = (curPos.x - h.x) / d, dy = (curPos.y - h.y) / d;
+  const push = DROPLET_R + h.r + 16;
+  curPos.x = Math.min(Math.max(h.x + dx * push, DROPLET_R), currentCanvas.width - DROPLET_R);
+  curPos.y = Math.min(Math.max(h.y + dy * push, DROPLET_R), currentCanvas.height - DROPLET_R);
+  curBumpGrace = ts + 350;
+
+  currentCanvasWrap.classList.add('current-shake');
+  setTimeout(() => currentCanvasWrap.classList.remove('current-shake'), 220);
+}
+
+function handleCurrentWin() {
+  curFinished = true;
+  curDragging = false;
+  curTotalTime += curElapsed;
+  SFX.correct();
+  currentHint.classList.add('hidden');
+
+  const isLast = curLevelIdx === CURRENT_LEVELS.length - 1;
+  currentOverlayEyebrow.textContent = isLast ? "Course cleared" : "Level cleared";
+  currentOverlayTime.textContent = curElapsed.toFixed(1) + "s";
+  currentOverlayMsg.textContent = curBumpsLevel === 0
+    ? "Clean run — not a single bump."
+    : ("Cleared with " + curBumpsLevel + " bump" + (curBumpsLevel === 1 ? "" : "s") + ".");
+  currentNextBtn.textContent = isLast ? "See results \u2192" : "Next level \u2192";
+  currentOverlay.hidden = false;
+  currentProgressFill.style.width = ((curLevelIdx + 1) / CURRENT_LEVELS.length * 100) + "%";
+  if (isLast) SFX.fanfare();
+}
+
+currentNextBtn.addEventListener('click', () => {
+  if (curLevelIdx === CURRENT_LEVELS.length - 1) {
+    finishCurrentCourse();
+  } else {
+    curLevelIdx++;
+    loadCurrentLevel();
+  }
+});
+
+function finishCurrentCourse() {
+  cancelCurrentLoop();
+  curRunning = false;
+  currentCard.hidden = true;
+  currentResults.hidden = false;
+  currentFinalTime.textContent = curTotalTime.toFixed(1) + "s";
+
+  let msg;
+  if (curTotalBumps === 0) msg = "Flawless run through every level. Not a single bump.";
+  else if (curTotalBumps <= 3) msg = "Excellent control — barely a ripple the whole way.";
+  else if (curTotalBumps <= 8) msg = "Solid run. A few close calls along the way.";
+  else msg = "Rough waters out there — give the course another go.";
+  currentFinalMsg.textContent = msg;
+}
+
+currentReplayBtn.addEventListener('click', openCurrent);
+
+function drawCurrentFrame(hz, lvl) {
+  const c = currentCtx;
+  const W = currentCanvas.width, H = currentCanvas.height;
+  c.clearRect(0, 0, W, H);
+
+  // drain / goal
+  const g = lvl.goal;
+  const gr = g.r || 28;
+  const grad = c.createRadialGradient(g.x, g.y, 2, g.x, g.y, gr);
+  grad.addColorStop(0, '#eafcff');
+  grad.addColorStop(0.55, '#8fe0ff');
+  grad.addColorStop(1, '#0e8fdd');
+  c.beginPath();
+  c.arc(g.x, g.y, gr, 0, Math.PI * 2);
+  c.fillStyle = grad;
+  c.fill();
+  c.lineWidth = 3;
+  c.strokeStyle = 'rgba(14,143,221,0.6)';
+  c.stroke();
+
+  c.strokeStyle = 'rgba(255,255,255,0.75)';
+  c.lineWidth = 2;
+  c.beginPath();
+  for (let a = 0; a < Math.PI * 3; a += 0.25) {
+    const rr = (a / (Math.PI * 3)) * (gr - 6);
+    const px = g.x + Math.cos(a + curDrainSpin) * rr;
+    const py = g.y + Math.sin(a + curDrainSpin) * rr;
+    if (a === 0) c.moveTo(px, py); else c.lineTo(px, py);
+  }
+  c.stroke();
+
+  // hazards
+  hz.forEach(h => {
+    const hg = c.createRadialGradient(h.x - h.r * 0.3, h.y - h.r * 0.3, 1, h.x, h.y, h.r);
+    hg.addColorStop(0, '#ffd8c9');
+    hg.addColorStop(0.5, '#ff8a5c');
+    hg.addColorStop(1, '#d8492c');
+    c.beginPath();
+    c.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+    c.fillStyle = hg;
+    c.fill();
+    c.lineWidth = 2;
+    c.strokeStyle = 'rgba(255,255,255,0.6)';
+    c.stroke();
+
+    c.strokeStyle = 'rgba(216,73,44,0.55)';
+    c.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      c.beginPath();
+      c.moveTo(h.x + Math.cos(a) * h.r, h.y + Math.sin(a) * h.r);
+      c.lineTo(h.x + Math.cos(a) * (h.r + 7), h.y + Math.sin(a) * (h.r + 7));
+      c.stroke();
+    }
+  });
+
+  // droplet
+  const dg = c.createRadialGradient(curPos.x - 5, curPos.y - 6, 1, curPos.x, curPos.y, DROPLET_R);
+  dg.addColorStop(0, '#ffffff');
+  dg.addColorStop(0.4, '#bfeaff');
+  dg.addColorStop(1, '#0e8fdd');
+  c.beginPath();
+  c.arc(curPos.x, curPos.y, DROPLET_R, 0, Math.PI * 2);
+  c.fillStyle = dg;
+  c.fill();
+  c.lineWidth = 2;
+  c.strokeStyle = 'rgba(255,255,255,0.85)';
+  c.stroke();
+}
+
+function currentLoop(ts) {
+  if (!curRunning) return;
+  const lvl = CURRENT_LEVELS[curLevelIdx];
+  curDrainSpin += 0.01;
+
+  const hz = lvl.hazards.map(h => resolveHazardPos(h, ts));
+
+  if (!curFinished) {
+    for (const h of hz) {
+      const dx = curPos.x - h.x, dy = curPos.y - h.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < DROPLET_R + h.r) {
+        if (ts > curBumpGrace) handleCurrentBump(h, ts, dist);
+        break;
+      }
+    }
+
+    if (!curFinished) {
+      const goal = lvl.goal;
+      const gd = Math.hypot(curPos.x - goal.x, curPos.y - goal.y);
+      if (gd < (goal.r || 28) - 6) handleCurrentWin();
+    }
+
+    curElapsed = (ts - curLevelStartTs) / 1000;
+    currentTimer.textContent = curElapsed.toFixed(1) + "s";
+  }
+
+  drawCurrentFrame(hz, lvl);
+  curRAF = requestAnimationFrame(currentLoop);
+}

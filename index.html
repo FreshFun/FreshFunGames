@@ -134,6 +134,19 @@
         <span class="play-pill">Play</span>
       </div>
     </button>
+
+    <button class="game-card" id="playCurrent">
+      <div class="thumb current-thumb">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M100 28 C132 78 162 112 162 142 C162 172 134 188 100 188 C66 188 38 172 38 142 C38 112 68 78 100 28 Z"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <h2>The Current</h2>
+        <p>Drag the droplet through the tank with your finger or mouse. Dodge the hazards, reach the drain.</p>
+        <span class="play-pill">Play</span>
+      </div>
+    </button>
   </main>
 </div>
 
@@ -438,6 +451,53 @@
       <div class="shade-final-score" id="pollFinalScore">0 / 20</div>
       <p class="shade-final-msg" id="pollFinalMsg"></p>
       <button class="grade-btn" id="pollReplayBtn">Play again</button>
+    </section>
+  </div>
+</div>
+
+<!-- ══════════ THE CURRENT ══════════ -->
+<div id="currentView" hidden>
+  <button class="back-pill" id="backBtnCurrent">&larr; FreshFun</button>
+
+  <div class="page">
+    <header class="game-header">
+      <h1>The Current</h1>
+      <p class="sub">Press the droplet, drag it with your finger or mouse. Don't touch the hazards.</p>
+    </header>
+
+    <div class="shade-progress">
+      <div class="shade-progress-bar"><div class="shade-progress-fill" id="currentProgressFill"></div></div>
+      <div class="shade-progress-labels">
+        <span id="currentLevelNum">Level 1 of 8</span>
+        <span id="currentBumpLabel">Bumps: 0</span>
+      </div>
+    </div>
+
+    <section class="current-card" id="currentCard">
+      <div class="current-hud">
+        <span id="currentTimer">0.0s</span>
+      </div>
+
+      <div class="current-canvas-wrap" id="currentCanvasWrap">
+        <canvas id="currentCanvas" width="480" height="360"></canvas>
+        <div class="current-overlay" id="currentOverlay" hidden>
+          <div class="current-overlay-card">
+            <span class="eyebrow" id="currentOverlayEyebrow">Level cleared</span>
+            <div class="current-overlay-time" id="currentOverlayTime">0.0s</div>
+            <p class="current-overlay-msg" id="currentOverlayMsg"></p>
+            <button class="grade-btn" id="currentNextBtn">Next level &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint" id="currentHint">Press and drag the droplet to start</p>
+    </section>
+
+    <section class="shade-results" id="currentResults" hidden>
+      <span class="eyebrow">Course cleared</span>
+      <div class="shade-final-score" id="currentFinalTime">0.0s</div>
+      <p class="shade-final-msg" id="currentFinalMsg"></p>
+      <button class="grade-btn" id="currentReplayBtn">Play again</button>
     </section>
   </div>
 </div>
